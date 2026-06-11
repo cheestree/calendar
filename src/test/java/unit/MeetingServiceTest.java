@@ -39,7 +39,7 @@ class MeetingServiceTest {
     private MeetingService meetingService;
 
     /**
-     * Scenario: Organizer proposes meeting with invitees
+     * Scenario: Organizer proposes a meeting with invitees
      */
     @Test
     void proposeCreatesMeetingWithAcceptedOrganizerAndPendingInvitees() {
@@ -79,7 +79,7 @@ class MeetingServiceTest {
     }
 
     /**
-     * Scenario: Organizer proposes meeting with invalid time
+     * Scenario: Organizer proposes a meeting with invalid time
      */
     @Test
     void proposeThrowsWhenEndIsNotAfterStart() {
@@ -102,7 +102,7 @@ class MeetingServiceTest {
     }
 
     /**
-     * Scenario: Organizer proposes meeting with invitee that doesn't exist
+     * Scenario: Organizer proposes a meeting with an invitee that doesn't exist
      */
     @Test
     void proposeThrowsWhenInviteeDoesNotExist() {
@@ -163,14 +163,6 @@ class MeetingServiceTest {
     @Test
     void respondSaysPending() {
         User user = new User("bob", "bob@example.com", "hash");
-        Meeting meeting = new Meeting(
-                "Planning",
-                "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
-                new User("alice", "alice@example.com", "hash")
-        );
-        MeetingParticipant participant = new MeetingParticipant(meeting, user, InviteStatus.PENDING);
 
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
@@ -269,7 +261,7 @@ class MeetingServiceTest {
     }
 
     /**
-     * Scenario: User discovers an event with missing end time and creates meeting from it
+     * Scenario: User discovers an event with missing end time and creates a meeting from it
      */
     @Test
     void copyFromDiscoveredDefaultsEndTimeWhenMissing() {
