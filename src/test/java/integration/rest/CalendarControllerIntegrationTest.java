@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class CalendarControllerIntegrationTest extends IntegrationTestSupport {
 
+    /** Renders the authenticated calendar with meetings, pending invites, and iCal subscription links. */
     @Test
     @WithMockUser(username = "alice")
     void calendarGetReturnsCalendarViewWithMeetingsInvitesAndIcalLinks() throws Exception {

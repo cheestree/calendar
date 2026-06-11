@@ -18,6 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class MeetingControllerIntegrationTest extends IntegrationTestSupport {
 
+    /** Creates a proposed meeting with the organizer accepted and the invitee pending. */
     @Test
     @WithMockUser(username = "alice")
     void proposeMeetingCreatesOrganizerAndInviteeParticipants() throws Exception {
@@ -47,6 +48,7 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                                 && participant.getStatus() == InviteStatus.PENDING));
     }
 
+    /** Serves the meeting proposal form for an authenticated user. */
     @Test
     @WithMockUser(username = "alice")
     void proposeFormGetReturnsForm() throws Exception {
@@ -55,6 +57,7 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(result -> assertEquals("propose", result.getModelAndView().getViewName()));
     }
 
+    /** Accepts a pending invite and redirects back to the calendar. */
     @Test
     @WithMockUser(username = "bob")
     void respondPostRedirectsToCalendar() throws Exception {
@@ -83,6 +86,7 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                         .getStatus());
     }
 
+    /** Declines a pending invite through the non-accept response branch. */
     @Test
     @WithMockUser(username = "bob")
     void respondPostWithDeclineActionDeclinesInvite() throws Exception {
@@ -111,6 +115,7 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                         .getStatus());
     }
 
+    /** Returns the proposal form with an error when the end time is not after the start time. */
     @Test
     @WithMockUser(username = "alice")
     void proposeMeetingWithEndBeforeStartReturnsFormWithError() throws Exception {

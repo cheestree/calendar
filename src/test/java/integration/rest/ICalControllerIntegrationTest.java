@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ICalControllerIntegrationTest extends IntegrationTestSupport {
 
+    /** Returns a text/calendar feed for a valid personal iCal token. */
     @Test
     void icalFeedReturnsCalendarForToken() throws Exception {
         User user = userRepository.save(new User("alice", "alice@example.com", "hash"));
@@ -38,6 +39,7 @@ class ICalControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("STATUS:CONFIRMED")));
     }
 
+    /** Returns 404 when the iCal token does not belong to any user. */
     @Test
     void icalFeedReturnsNotFoundForUnknownToken() throws Exception {
         mockMvc.perform(get("/ical/missing.ics"))

@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AuthControllerIntegrationTest extends IntegrationTestSupport {
 
+    /** Registers a new user, redirects to login, and stores a hashed password. */
     @Test
     void registerCreatesUserAndRedirectsToLogin() throws Exception {
         mockMvc.perform(post("/register")
@@ -29,6 +30,7 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
         assertNotEquals("password", user.getPasswordHash());
     }
 
+    /** Rejects duplicate usernames and returns the form with the submitted values preserved. */
     @Test
     void registerDuplicateUsernameReturnsFormWithError() throws Exception {
         userRepository.save(new User("alice", "alice@example.com", "hash"));
@@ -45,6 +47,7 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(model().attribute("email", "new-alice@example.com"));
     }
 
+    /** Serves the registration form. */
     @Test
     void registerGetReturnsForm() throws Exception {
         mockMvc.perform(get("/register"))
@@ -52,6 +55,7 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(result -> assertEquals("register", result.getModelAndView().getViewName()));
     }
 
+    /** Serves the login form. */
     @Test
     void loginGetReturnsForm() throws Exception {
         mockMvc.perform(get("/login"))
@@ -59,6 +63,7 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(result -> assertEquals("login", result.getModelAndView().getViewName()));
     }
 
+    /** Redirects the root route to the authenticated calendar entry point. */
     @Test
     void rootGetRedirectsToCalendar() throws Exception {
         mockMvc.perform(get("/"))
