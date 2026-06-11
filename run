@@ -1,0 +1,3 @@
+#!/bin/bash
+
+TICKETMASTER_API_KEY="" SEATGEEK_CLIENT_ID="" mvn spring-boot:run
