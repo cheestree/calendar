@@ -11,7 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceTest {
@@ -46,7 +49,7 @@ class UserServiceTest {
 
         assertEquals("Username already taken", error.getMessage());
         verify(passwordEncoder, never()).encode("password");
-        verify(userRepository, never()).save(null);
+        verify(userRepository, never()).save(any());
     }
 
     @Test
