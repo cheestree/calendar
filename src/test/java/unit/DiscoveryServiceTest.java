@@ -87,7 +87,7 @@ class DiscoveryServiceTest {
     }
 
     /**
-     * Scenario: Discovery service is configured with two providers. Both providers return results. One event from each provider has the same URL, but different start times. The results are deduped by URL and sorted by start time.
+     * Scenario: Discovery service falls back to source and external id when events do not have URLs.
      */
     @Test
     void searchDedupesByUrlAndSortsByStartTime() {
