@@ -161,7 +161,7 @@ class MeetingServiceTest {
      * Scenario: Invitee responds to meeting invite with invalid status
      */
     @Test
-    void respondSaysPending() {
+    void respondRejectsPendingStatus() {
         User user = new User("bob", "bob@example.com", "hash");
 
         IllegalArgumentException error = assertThrows(
