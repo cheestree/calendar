@@ -11,6 +11,9 @@ import com.example.meetings.repository.UserRepository;
 import com.example.meetings.service.MeetingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -22,6 +25,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -99,6 +103,95 @@ class MeetingServiceTest {
         );
 
         assertEquals("End time must be after start time", error.getMessage());
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"\t\n"})
+    void proposeThrowsWhenTitleIsBlank(String title) {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Instant start = Instant.parse("2026-06-11T10:00:00Z");
+        Instant end = Instant.parse("2026-06-11T11:00:00Z");
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> meetingService.propose(
+                        organizer,
+                        title,
+                        "Missing title",
+                        start,
+                        end,
+                        List.of()
+                )
+        );
+
+        assertEquals("Title is required", error.getMessage());
+        verifyNoInteractions(meetingRepository, participantRepository, userRepository);
+    }
+
+    @Test
+    void proposeThrowsWhenStartIsNull() {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Instant end = Instant.parse("2026-06-11T11:00:00Z");
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> meetingService.propose(
+                        organizer,
+                        "Planning",
+                        "Missing start",
+                        null,
+                        end,
+                        List.of()
+                )
+        );
+
+        assertEquals("Start time is required", error.getMessage());
+        verifyNoInteractions(meetingRepository, participantRepository, userRepository);
+    }
+
+    @Test
+    void proposeThrowsWhenEndIsNull() {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Instant start = Instant.parse("2026-06-11T10:00:00Z");
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> meetingService.propose(
+                        organizer,
+                        "Planning",
+                        "Missing end",
+                        start,
+                        null,
+                        List.of()
+                )
+        );
+
+        assertEquals("End time is required", error.getMessage());
+        verifyNoInteractions(meetingRepository, participantRepository, userRepository);
+    }
+
+    @Test
+    void proposeTreatsNullInviteeListAsEmpty() {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Instant start = Instant.parse("2026-06-11T10:00:00Z");
+        Instant end = Instant.parse("2026-06-11T11:00:00Z");
+
+        when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Meeting meeting = meetingService.propose(
+                organizer,
+                "Planning",
+                "No invitees",
+                start,
+                end,
+                null
+        );
+
+        assertEquals(1, meeting.getParticipants().size());
+        assertParticipant(meeting, organizer, InviteStatus.ACCEPTED);
+        verifyNoInteractions(participantRepository, userRepository);
+        verify(meetingRepository).save(meeting);
     }
 
     /**
