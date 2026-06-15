@@ -24,9 +24,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MeetingServiceTest {
@@ -379,5 +377,29 @@ class MeetingServiceTest {
         assertEquals("Source: SeatGeek", meeting.getDescription());
         assertParticipant(meeting, user, InviteStatus.ACCEPTED);
         verify(meetingRepository).save(meeting);
+    }
+
+    @Test
+    void copyFromDiscoveredThrowsWhenEndIsNotAfterStart() {
+        User user = new User("bob", "bob@example.com", "hash");
+        Instant start = Instant.parse("2026-06-11T22:00:00Z");
+        DiscoveredEvent event = new DiscoveredEvent(
+                "Ticketmaster",
+                "tm-123",
+                "Late Show",
+                "Invalid interval",
+                start,
+                start.minusSeconds(3600),
+                "https://example.com/events/tm-123",
+                "Blue Room"
+        );
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> meetingService.copyFromDiscovered(user, event)
+        );
+
+        assertEquals("End time must be after start time", error.getMessage());
+        verify(meetingRepository, never()).save(any(Meeting.class));
     }
 }
