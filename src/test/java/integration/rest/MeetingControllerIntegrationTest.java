@@ -86,7 +86,7 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                         .getStatus());
     }
 
-    /** Declines a pending invite through the non-accept response branch. */
+    /** Declines a pending invite through the explicit decline action. */
     @Test
     @WithMockUser(username = "bob")
     void respondPostWithDeclineActionDeclinesInvite() throws Exception {
@@ -110,6 +110,34 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(redirectedUrl("/calendar"));
 
         assertEquals(InviteStatus.DECLINED,
+                participantRepository.findByMeetingIdAndUserId(savedMeeting.getId(), bob.getId())
+                        .orElseThrow()
+                        .getStatus());
+    }
+
+    /** Rejects unknown response actions instead of treating them as declines. */
+    @Test
+    @WithMockUser(username = "bob")
+    void respondPostWithUnknownActionReturnsBadRequest() throws Exception {
+        User alice = userRepository.save(new User("alice", "alice@example.com", "hash"));
+        User bob = userRepository.save(new User("bob", "bob@example.com", "hash"));
+        Meeting meeting = new Meeting(
+                "Planning",
+                "Sprint planning",
+                Instant.parse("2026-06-11T10:00:00Z"),
+                Instant.parse("2026-06-11T11:00:00Z"),
+                alice
+        );
+        meeting.addParticipant(new MeetingParticipant(meeting, alice, InviteStatus.ACCEPTED));
+        meeting.addParticipant(new MeetingParticipant(meeting, bob, InviteStatus.PENDING));
+        Meeting savedMeeting = meetingRepository.save(meeting);
+
+        mockMvc.perform(post("/meetings/" + savedMeeting.getId() + "/respond")
+                        .with(csrf())
+                        .param("action", "maybe"))
+                .andExpect(status().isBadRequest());
+
+        assertEquals(InviteStatus.PENDING,
                 participantRepository.findByMeetingIdAndUserId(savedMeeting.getId(), bob.getId())
                         .orElseThrow()
                         .getStatus());
