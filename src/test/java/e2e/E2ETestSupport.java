@@ -85,10 +85,6 @@ abstract class E2ETestSupport {
         Assertions.assertTrue(browser.getPageSource().contains("Account created"));
     }
 
-    protected void signIn(String username) {
-        signIn(username, PASSWORD);
-    }
-
     protected void signIn(String username, String password) {
         browser.get(url("/login"));
         browser.findElement(By.id("username")).sendKeys(username);

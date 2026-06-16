@@ -30,7 +30,7 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         createUser("alice", "alice@example.com");
         createUser("bob", "bob@example.com");
 
-        signIn("alice");
+        signIn("alice", PASSWORD);
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
         browser.findElement(By.id("description")).sendKeys("Sprint planning");
@@ -64,7 +64,7 @@ class MeetingFlowE2ETest extends E2ETestSupport {
     void proposingMeetingWithUnknownInviteeShowsErrorAndDoesNotCreateMeeting() {
         createUser("alice", "alice@example.com");
 
-        signIn("alice");
+        signIn("alice", PASSWORD);
         assertEquals("Calendar", browser.getTitle());
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
@@ -89,7 +89,7 @@ class MeetingFlowE2ETest extends E2ETestSupport {
     void proposingMeetingWithEndBeforeStartShowsErrorAndDoesNotCreateMeeting() {
         createUser("alice", "alice@example.com");
 
-        signIn("alice");
+        signIn("alice", PASSWORD);
         assertEquals("Calendar", browser.getTitle());
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
@@ -117,7 +117,7 @@ class MeetingFlowE2ETest extends E2ETestSupport {
                 Instant.parse("2026-07-01T11:00:00Z"),
                 List.of("bob"));
 
-        signIn("bob");
+        signIn("bob", PASSWORD);
         assertTrue(browser.getPageSource().contains("Pending invites"));
         assertTrue(browser.getPageSource().contains("Planning"));
         browser.findElement(By.cssSelector("form[action$='/respond'] button[type='submit']")).click();
@@ -152,7 +152,7 @@ class MeetingFlowE2ETest extends E2ETestSupport {
                 Instant.parse("2026-07-01T11:00:00Z"),
                 List.of("bob"));
 
-        signIn("bob");
+        signIn("bob", PASSWORD);
         assertEquals("Calendar", browser.getTitle());
         assertTrue(browser.getPageSource().contains("Pending invites"));
         assertTrue(browser.getPageSource().contains("Planning"));
