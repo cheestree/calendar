@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.test.context.support.WithMockUser;
 
 import java.time.Instant;
+import java.time.Period;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,6 +18,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class CalendarControllerIntegrationTest extends IntegrationTestSupport {
+
+    private static final Instant START = Instant.parse("2026-06-11T10:00:00Z");
+    private static final Instant END = Instant.parse("2026-06-11T11:00:00Z");
 
     /** Renders the authenticated calendar with meetings, pending invites, and iCal subscription links. */
     @Test
@@ -28,16 +32,16 @@ class CalendarControllerIntegrationTest extends IntegrationTestSupport {
         Meeting acceptedMeeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 alice
         );
         acceptedMeeting.addParticipant(new MeetingParticipant(acceptedMeeting, alice, InviteStatus.ACCEPTED));
         Meeting pendingInvite = new Meeting(
                 "Design Review",
                 "Mockup review",
-                Instant.parse("2026-06-12T10:00:00Z"),
-                Instant.parse("2026-06-12T11:00:00Z"),
+                START.plus(Period.ofDays(1)),
+                END.plus(Period.ofDays(1)),
                 bob
         );
         pendingInvite.addParticipant(new MeetingParticipant(pendingInvite, bob, InviteStatus.ACCEPTED));
