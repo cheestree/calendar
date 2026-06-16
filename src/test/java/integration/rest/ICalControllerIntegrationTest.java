@@ -16,6 +16,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class ICalControllerIntegrationTest extends IntegrationTestSupport {
 
+    private static final Instant START = Instant.parse("2026-06-11T10:00:00Z");
+    private static final Instant END = Instant.parse("2026-06-11T11:00:00Z");
+
     /** Returns a text/calendar feed for a valid personal iCal token. */
     @Test
     void icalFeedReturnsCalendarForToken() throws Exception {
@@ -23,8 +26,8 @@ class ICalControllerIntegrationTest extends IntegrationTestSupport {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 user
         );
         meeting.addParticipant(new MeetingParticipant(meeting, user, InviteStatus.ACCEPTED));
