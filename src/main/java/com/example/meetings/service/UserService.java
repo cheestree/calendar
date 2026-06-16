@@ -19,10 +19,17 @@ public class UserService {
 
     @Transactional
     public User register(String username, String email, String rawPassword) {
-        if (userRepository.existsByUsername(username)) {
+        String normalizedUsername = username == null ? "" : username.trim();
+        if (normalizedUsername.isEmpty()) {
+            throw new IllegalArgumentException("Username is required");
+        }
+        if (rawPassword == null || rawPassword.isBlank()) {
+            throw new IllegalArgumentException("Password is required");
+        }
+        if (userRepository.existsByUsername(normalizedUsername)) {
             throw new IllegalArgumentException("Username already taken");
         }
-        User user = new User(username, email, passwordEncoder.encode(rawPassword));
+        User user = new User(normalizedUsername, email, passwordEncoder.encode(rawPassword));
         return userRepository.save(user);
     }
 
