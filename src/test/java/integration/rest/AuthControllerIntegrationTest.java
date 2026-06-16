@@ -2,6 +2,8 @@ package integration.rest;
 
 import com.example.meetings.model.User;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -13,6 +15,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class AuthControllerIntegrationTest extends IntegrationTestSupport {
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /** Registers a new user, redirects to login, and stores a hashed password. */
     @Test
@@ -61,6 +66,55 @@ class AuthControllerIntegrationTest extends IntegrationTestSupport {
         mockMvc.perform(get("/login"))
                 .andExpect(status().isOk())
                 .andExpect(result -> assertEquals("login", result.getModelAndView().getViewName()));
+    }
+
+    /** Authenticates a registered user and redirects to the calendar. */
+    @Test
+    void loginPostWithValidCredentialsRedirectsToCalendar() throws Exception {
+        userRepository.save(new User("alice", "alice@example.com", passwordEncoder.encode("password")));
+
+        mockMvc.perform(post("/login")
+                        .with(csrf())
+                        .param("username", "alice")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/calendar"));
+    }
+
+    /** Rejects invalid login credentials and redirects back to the login page with an error. */
+    @Test
+    void loginPostWithInvalidCredentialsRedirectsToLoginError() throws Exception {
+        userRepository.save(new User("alice", "alice@example.com", passwordEncoder.encode("password")));
+
+        mockMvc.perform(post("/login")
+                        .with(csrf())
+                        .param("username", "alice")
+                        .param("password", "wrong-password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login?error"));
+    }
+
+    /** Rejects registration posts without a CSRF token. */
+    @Test
+    void registerPostWithoutCsrfIsForbidden() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("username", "alice")
+                        .param("email", "alice@example.com")
+                        .param("password", "password"))
+                .andExpect(status().isForbidden());
+
+        assertEquals(0, userRepository.count());
+    }
+
+    /** Rejects login posts without a CSRF token. */
+    @Test
+    void loginPostWithoutCsrfIsForbidden() throws Exception {
+        userRepository.save(new User("alice", "alice@example.com", passwordEncoder.encode("password")));
+
+        mockMvc.perform(post("/login")
+                        .param("username", "alice")
+                        .param("password", "password"))
+                .andExpect(status().isForbidden());
     }
 
     /** Redirects the root route to the authenticated calendar entry point. */
