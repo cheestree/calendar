@@ -221,6 +221,70 @@ class MeetingServiceTest {
         assertEquals("Unknown invitee: missing", error.getMessage());
     }
 
+    /**
+     * Scenario: Organizer proposes a meeting that overlaps another meeting with a different title
+     */
+    @Test
+    void proposeAllowsOverlappingMeetingWithDifferentTitle() {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Meeting existing = new Meeting(
+                "Planning",
+                "Sprint planning",
+                START,
+                END,
+                organizer
+        );
+
+        when(meetingRepository.findOverlapping(organizer, START.plusSeconds(1800), END.plusSeconds(1800)))
+                .thenReturn(List.of(existing));
+        when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Meeting meeting = meetingService.propose(
+                organizer,
+                "Retrospective",
+                "Sprint retrospective",
+                START.plusSeconds(1800),
+                END.plusSeconds(1800),
+                List.of()
+        );
+
+        assertEquals("Retrospective", meeting.getTitle());
+        verify(meetingRepository).save(meeting);
+    }
+
+    /**
+     * Scenario: Organizer proposes a meeting that overlaps another meeting with the same title
+     */
+    @Test
+    void proposeRejectsOverlappingMeetingWithSameTitle() {
+        User organizer = new User("alice", "alice@example.com", "hash");
+        Meeting existing = new Meeting(
+                "Planning",
+                "Sprint planning",
+                START,
+                END,
+                organizer
+        );
+
+        when(meetingRepository.findOverlapping(organizer, START.plusSeconds(1800), END.plusSeconds(1800)))
+                .thenReturn(List.of(existing));
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> meetingService.propose(
+                        organizer,
+                        " planning ",
+                        "Duplicate planning",
+                        START.plusSeconds(1800),
+                        END.plusSeconds(1800),
+                        List.of()
+                )
+        );
+
+        assertEquals("A meeting with this title already overlaps this time", error.getMessage());
+        verify(meetingRepository, never()).save(any(Meeting.class));
+    }
+
     private static void assertParticipant(Meeting meeting, User user, InviteStatus status) {
         assertTrue(meeting.getParticipants().stream()
                 .anyMatch(participant ->
