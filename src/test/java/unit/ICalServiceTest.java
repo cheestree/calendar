@@ -7,7 +7,10 @@ import com.example.meetings.model.User;
 import com.example.meetings.service.ICalService;
 import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.Period;
+import java.time.temporal.Temporal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -16,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ICalServiceTest {
 
     private final ICalService icalService = new ICalService();
+
+    private static final Instant START = Instant.parse("2026-06-11T10:00:00Z");
+    private static final Instant END = Instant.parse("2026-06-11T11:00:00Z");
 
     /**
      * Scenario: User bob has a meeting with organizer alice.
@@ -28,8 +34,8 @@ class ICalServiceTest {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 organizer
         );
         meeting.addParticipant(new MeetingParticipant(meeting, owner, InviteStatus.PENDING));
@@ -59,8 +65,8 @@ class ICalServiceTest {
         Meeting meeting = new Meeting(
                 "Plan; review, notes",
                 "Line 1\nLine 2 \\ done",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 owner
         );
         meeting.addParticipant(new MeetingParticipant(meeting, owner, InviteStatus.ACCEPTED));
@@ -82,8 +88,8 @@ class ICalServiceTest {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 owner
         );
         meeting.addParticipant(new MeetingParticipant(meeting, owner, InviteStatus.ACCEPTED));
@@ -103,8 +109,8 @@ class ICalServiceTest {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 owner
         );
         meeting.addParticipant(new MeetingParticipant(meeting, owner, InviteStatus.DECLINED));
@@ -123,15 +129,15 @@ class ICalServiceTest {
         Meeting nullDescription = new Meeting(
                 "Planning without description",
                 null,
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 owner
         );
         Meeting blankDescription = new Meeting(
                 "Planning with blank description",
                 "   ",
-                Instant.parse("2026-06-12T10:00:00Z"),
-                Instant.parse("2026-06-12T11:00:00Z"),
+                START.plus(Period.ofDays(1)),
+                END.plus(Period.ofDays(1)),
                 owner
         );
 
