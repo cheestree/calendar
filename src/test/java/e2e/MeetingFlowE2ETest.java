@@ -5,36 +5,26 @@ import com.example.meetings.model.Meeting;
 import com.example.meetings.model.MeetingParticipant;
 import com.example.meetings.model.User;
 import com.example.meetings.service.MeetingService;
-import com.example.meetings.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebElement;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.Instant;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MeetingFlowE2ETest extends E2ETestSupport {
 
-    private static final String PASSWORD = "password";
-
-    @Autowired
-    private UserService userService;
 
     @Autowired
     private MeetingService meetingService;
 
-    @Test
-    void userCanRegister() {
-        register("alice", "alice@example.com");
-
-        inTransaction(() -> assertTrue(userRepository.existsByUsername("alice")));
-    }
-
+    /**
+     * Scenario: Alice proposes a meeting to Bob. Alice signs in, proposes a meeting, fills in the form, and submits it.
+     */
     @Test
     void signedInUserCanProposeMeeting() {
         createUser("alice", "alice@example.com");
@@ -66,6 +56,55 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         });
     }
 
+    /**
+     * Scenario: Alice proposes a meeting to missing-user. Alice signs in, proposes a meeting, fills in the form, and submits it.
+     * It throws an error because missing-user is not a known user.
+     */
+    @Test
+    void proposingMeetingWithUnknownInviteeShowsErrorAndDoesNotCreateMeeting() {
+        createUser("alice", "alice@example.com");
+
+        signIn("alice");
+        assertEquals("Calendar", browser.getTitle());
+        browser.findElement(By.linkText("Propose a meeting")).click();
+        browser.findElement(By.id("title")).sendKeys("Planning");
+        browser.findElement(By.id("description")).sendKeys("Sprint planning");
+        setDateTime("start", "2026-07-01T10:00");
+        setDateTime("end", "2026-07-01T11:00");
+        browser.findElement(By.id("invitees")).sendKeys("missing-user");
+        browser.findElement(By.cssSelector("form[action='/meetings/new'] button[type='submit']")).click();
+
+        assertEquals("Propose a meeting", browser.getTitle());
+        assertTrue(browser.getPageSource().contains("Unknown invitee: missing-user"));
+        assertEquals("Planning", browser.findElement(By.id("title")).getAttribute("value"));
+        assertEquals("missing-user", browser.findElement(By.id("invitees")).getAttribute("value"));
+        inTransaction(() -> assertEquals(0, meetingRepository.findAll().size()));
+    }
+
+    /**
+     * Scenario: Alice proposes a meeting with an end time before the start time. Alice signs in, proposes a meeting, fills in the form, and submits it.
+     * It throws an error because the end time is before the start time.
+     */
+    @Test
+    void proposingMeetingWithEndBeforeStartShowsErrorAndDoesNotCreateMeeting() {
+        createUser("alice", "alice@example.com");
+
+        signIn("alice");
+        assertEquals("Calendar", browser.getTitle());
+        browser.findElement(By.linkText("Propose a meeting")).click();
+        browser.findElement(By.id("title")).sendKeys("Planning");
+        setDateTime("start", "2026-07-01T11:00");
+        setDateTime("end", "2026-07-01T10:00");
+        browser.findElement(By.cssSelector("form[action='/meetings/new'] button[type='submit']")).click();
+
+        assertEquals("Propose a meeting", browser.getTitle());
+        assertTrue(browser.getPageSource().contains("End time must be after start time"));
+        inTransaction(() -> assertEquals(0, meetingRepository.findAll().size()));
+    }
+
+    /**
+     * Scenario: Bob is invited to a meeting proposed by Alice. Bob signs in, sees the meeting, and accepts it.
+     */
     @Test
     void inviteeCanAcceptPendingInvite() {
         User alice = createUser("alice", "alice@example.com");
@@ -98,33 +137,34 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         });
     }
 
-    private void register(String username, String email) {
-        browser.get(url("/register"));
-        browser.findElement(By.id("username")).sendKeys(username);
-        browser.findElement(By.id("email")).sendKeys(email);
-        browser.findElement(By.id("password")).sendKeys(PASSWORD);
-        browser.findElement(By.cssSelector("button[type='submit']")).click();
+    /**
+     * Scenario: Bob is invited to a meeting proposed by Alice. Bob signs in, sees the meeting, and declines it.
+     */
+    @Test
+    void inviteeCanDeclinePendingInvite() {
+        User alice = createUser("alice", "alice@example.com");
+        createUser("bob", "bob@example.com");
+        meetingService.propose(
+                alice,
+                "Planning",
+                "Sprint planning",
+                Instant.parse("2026-07-01T10:00:00Z"),
+                Instant.parse("2026-07-01T11:00:00Z"),
+                List.of("bob"));
 
-        assertEquals("Login", browser.getTitle());
-        assertTrue(browser.getPageSource().contains("Account created"));
-    }
-
-    private void signIn(String username) {
-        browser.get(url("/login"));
-        browser.findElement(By.id("username")).sendKeys(username);
-        browser.findElement(By.id("password")).sendKeys(PASSWORD);
-        browser.findElement(By.cssSelector("button[type='submit']")).click();
+        signIn("bob");
+        assertEquals("Calendar", browser.getTitle());
+        assertTrue(browser.getPageSource().contains("Pending invites"));
+        assertTrue(browser.getPageSource().contains("Planning"));
+        browser.findElement(By.cssSelector("form[action$='/respond'] button.danger")).click();
 
         assertEquals("Calendar", browser.getTitle());
-        assertTrue(browser.getPageSource().contains("Signed in as"));
-    }
-
-    private User createUser(String username, String email) {
-        return userService.register(username, email, PASSWORD);
-    }
-
-    private void setDateTime(String fieldId, String value) {
-        WebElement field = browser.findElement(By.id(fieldId));
-        ((JavascriptExecutor) browser).executeScript("arguments[0].value = arguments[1];", field, value);
+        assertFalse(browser.getPageSource().contains("Pending invites"));
+        inTransaction(() -> {
+            List<MeetingParticipant> participants = participantRepository.findAll();
+            assertTrue(participants.stream()
+                    .anyMatch(participant -> participant.getUser().getUsername().equals("bob")
+                            && participant.getStatus() == InviteStatus.DECLINED));
+        });
     }
 }
