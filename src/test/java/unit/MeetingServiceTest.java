@@ -40,6 +40,9 @@ class MeetingServiceTest {
     @InjectMocks
     private MeetingService meetingService;
 
+    private static final Instant START = Instant.parse("2026-06-11T10:00:00Z");
+    private static final Instant END = Instant.parse("2026-06-11T11:00:00Z");
+
     /**
      * Scenario: Organizer proposes a meeting with invitees
      */
@@ -49,9 +52,6 @@ class MeetingServiceTest {
         User bob = new User("bob", "bob@example.com", "hash");
         User clara = new User("clara", "clara@example.com", "hash");
 
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
-        Instant end = Instant.parse("2026-06-11T11:00:00Z");
-
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(bob));
         when(userRepository.findByUsername("clara")).thenReturn(Optional.of(clara));
         when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -60,15 +60,15 @@ class MeetingServiceTest {
                 organizer,
                 "Planning",
                 "Sprint planning",
-                start,
-                end,
+                START,
+                END,
                 List.of("bob", "clara", "bob", "alice", " ")
         );
 
         assertEquals("Planning", meeting.getTitle());
         assertEquals("Sprint planning", meeting.getDescription());
-        assertEquals(start, meeting.getStartTime());
-        assertEquals(end, meeting.getEndTime());
+        assertEquals(START, meeting.getStartTime());
+        assertEquals(END, meeting.getEndTime());
         assertEquals(organizer, meeting.getOrganizer());
 
         assertEquals(3, meeting.getParticipants().size());
@@ -86,7 +86,6 @@ class MeetingServiceTest {
     @Test
     void proposeThrowsWhenEndIsNotAfterStart() {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
 
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
@@ -94,8 +93,8 @@ class MeetingServiceTest {
                         organizer,
                         "Bad meeting",
                         "Invalid time",
-                        start,
-                        start,
+                        START,
+                        START,
                         List.of()
                 )
         );
@@ -103,13 +102,14 @@ class MeetingServiceTest {
         assertEquals("End time must be after start time", error.getMessage());
     }
 
+    /**
+     * Scenario: Organizer proposes a meeting with a blank or empty title
+     */
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {"\t\n"})
     void proposeThrowsWhenTitleIsBlank(String title) {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
-        Instant end = Instant.parse("2026-06-11T11:00:00Z");
 
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
@@ -117,8 +117,8 @@ class MeetingServiceTest {
                         organizer,
                         title,
                         "Missing title",
-                        start,
-                        end,
+                        START,
+                        END,
                         List.of()
                 )
         );
@@ -127,10 +127,12 @@ class MeetingServiceTest {
         verifyNoInteractions(meetingRepository, participantRepository, userRepository);
     }
 
+    /**
+     * Scenario: Organizer proposes a meeting with a null start time
+     */
     @Test
     void proposeThrowsWhenStartIsNull() {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant end = Instant.parse("2026-06-11T11:00:00Z");
 
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
@@ -139,7 +141,7 @@ class MeetingServiceTest {
                         "Planning",
                         "Missing start",
                         null,
-                        end,
+                        END,
                         List.of()
                 )
         );
@@ -148,10 +150,12 @@ class MeetingServiceTest {
         verifyNoInteractions(meetingRepository, participantRepository, userRepository);
     }
 
+    /**
+     * Scenario: Organizer proposes a meeting with a null end time
+     */
     @Test
     void proposeThrowsWhenEndIsNull() {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
 
         IllegalArgumentException error = assertThrows(
                 IllegalArgumentException.class,
@@ -159,7 +163,7 @@ class MeetingServiceTest {
                         organizer,
                         "Planning",
                         "Missing end",
-                        start,
+                        START,
                         null,
                         List.of()
                 )
@@ -169,11 +173,12 @@ class MeetingServiceTest {
         verifyNoInteractions(meetingRepository, participantRepository, userRepository);
     }
 
+    /**
+     * Scenario: Organizer proposes a meeting with no invitees
+     */
     @Test
     void proposeTreatsNullInviteeListAsEmpty() {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
-        Instant end = Instant.parse("2026-06-11T11:00:00Z");
 
         when(meetingRepository.save(any(Meeting.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -181,8 +186,8 @@ class MeetingServiceTest {
                 organizer,
                 "Planning",
                 "No invitees",
-                start,
-                end,
+                START,
+                END,
                 null
         );
 
@@ -198,8 +203,6 @@ class MeetingServiceTest {
     @Test
     void proposeThrowsWhenInviteeDoesNotExist() {
         User organizer = new User("alice", "alice@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T10:00:00Z");
-        Instant end = Instant.parse("2026-06-11T11:00:00Z");
 
         when(userRepository.findByUsername("missing")).thenReturn(Optional.empty());
 
@@ -209,8 +212,8 @@ class MeetingServiceTest {
                         organizer,
                         "Planning",
                         "Sprint planning",
-                        start,
-                        end,
+                        START,
+                        END,
                         List.of("missing")
                 )
         );
@@ -234,8 +237,8 @@ class MeetingServiceTest {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 new User("alice", "alice@example.com", "hash")
         );
         MeetingParticipant participant = new MeetingParticipant(meeting, user, InviteStatus.PENDING);
@@ -272,15 +275,15 @@ class MeetingServiceTest {
         Meeting first = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 new User("alice", "alice@example.com", "hash")
         );
         Meeting second = new Meeting(
                 "Retrospective",
                 "Sprint retrospective",
-                Instant.parse("2026-06-12T10:00:00Z"),
-                Instant.parse("2026-06-12T11:00:00Z"),
+                START,
+                END,
                 user
         );
         List<Meeting> calendar = List.of(first, second);
@@ -302,8 +305,8 @@ class MeetingServiceTest {
         Meeting meeting = new Meeting(
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-06-11T10:00:00Z"),
-                Instant.parse("2026-06-11T11:00:00Z"),
+                START,
+                END,
                 new User("alice", "alice@example.com", "hash")
         );
         MeetingParticipant pendingInvite = new MeetingParticipant(meeting, user, InviteStatus.PENDING);
@@ -357,13 +360,12 @@ class MeetingServiceTest {
     @Test
     void copyFromDiscoveredDefaultsEndTimeWhenMissing() {
         User user = new User("bob", "bob@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T20:00:00Z");
         DiscoveredEvent event = new DiscoveredEvent(
                 "SeatGeek",
                 "sg-123",
                 "Basketball",
                 null,
-                start,
+                START,
                 null,
                 null,
                 ""
@@ -373,23 +375,25 @@ class MeetingServiceTest {
 
         Meeting meeting = meetingService.copyFromDiscovered(user, event);
 
-        assertEquals(start.plusSeconds(7200), meeting.getEndTime());
+        assertEquals(START.plusSeconds(7200), meeting.getEndTime());
         assertEquals("Source: SeatGeek", meeting.getDescription());
         assertParticipant(meeting, user, InviteStatus.ACCEPTED);
         verify(meetingRepository).save(meeting);
     }
 
+    /**
+     * Scenario: User discovers an event with invalid time interval
+     */
     @Test
     void copyFromDiscoveredThrowsWhenEndIsNotAfterStart() {
         User user = new User("bob", "bob@example.com", "hash");
-        Instant start = Instant.parse("2026-06-11T22:00:00Z");
         DiscoveredEvent event = new DiscoveredEvent(
                 "Ticketmaster",
                 "tm-123",
                 "Late Show",
                 "Invalid interval",
-                start,
-                start.minusSeconds(3600),
+                START,
+                START.minusSeconds(3600),
                 "https://example.com/events/tm-123",
                 "Blue Room"
         );
