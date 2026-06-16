@@ -48,6 +48,7 @@ public class MeetingService {
         if (!end.isAfter(start)) {
             throw new IllegalArgumentException("End time must be after start time");
         }
+        rejectOverlappingSameTitle(organizer, title, start, end);
 
         Meeting meeting = new Meeting(title, description, start, end, organizer);
 
@@ -62,10 +63,23 @@ public class MeetingService {
             if (normalized.isEmpty() || !seen.add(normalized)) continue;
             User invitee = userRepository.findByUsername(normalized)
                     .orElseThrow(() -> new IllegalArgumentException("Unknown invitee: " + normalized));
+            rejectOverlappingSameTitle(invitee, title, start, end);
             meeting.addParticipant(new MeetingParticipant(meeting, invitee, InviteStatus.PENDING));
         }
 
         return meetingRepository.save(meeting);
+    }
+
+    private void rejectOverlappingSameTitle(User user, String title, Instant start, Instant end) {
+        List<Meeting> overlaps = meetingRepository.findOverlapping(user, start, end);
+        if (overlaps == null) return;
+        String normalizedTitle = title.trim();
+        boolean duplicate = overlaps.stream()
+                .anyMatch(meeting -> meeting.getTitle() != null
+                        && meeting.getTitle().trim().equalsIgnoreCase(normalizedTitle));
+        if (duplicate) {
+            throw new IllegalArgumentException("A meeting with this title already overlaps this time");
+        }
     }
 
     public List<Meeting> calendarFor(User user) {

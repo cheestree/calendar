@@ -160,4 +160,61 @@ class MeetingControllerIntegrationTest extends IntegrationTestSupport {
                 .andExpect(result -> assertEquals("propose", result.getModelAndView().getViewName()))
                 .andExpect(model().attribute("error", "End time must be after start time"));
     }
+
+    /** Allows overlapping meetings when their titles are different. */
+    @Test
+    @WithMockUser(username = "alice")
+    void proposeMeetingAllowsOverlappingDifferentTitle() throws Exception {
+        User alice = userRepository.save(new User("alice", "alice@example.com", "hash"));
+        Meeting existing = new Meeting(
+                "Planning",
+                "Sprint planning",
+                Instant.parse("2026-06-11T10:00:00Z"),
+                Instant.parse("2026-06-11T11:00:00Z"),
+                alice
+        );
+        existing.addParticipant(new MeetingParticipant(existing, alice, InviteStatus.ACCEPTED));
+        meetingRepository.save(existing);
+
+        mockMvc.perform(post("/meetings/new")
+                        .with(csrf())
+                        .param("title", "Retrospective")
+                        .param("description", "Sprint retrospective")
+                        .param("start", "2026-06-11T10:30")
+                        .param("end", "2026-06-11T11:30")
+                        .param("invitees", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/calendar"));
+
+        assertEquals(2, meetingRepository.findAll().size());
+    }
+
+    /** Rejects overlapping meetings when their titles are the same. */
+    @Test
+    @WithMockUser(username = "alice")
+    void proposeMeetingRejectsOverlappingSameTitle() throws Exception {
+        User alice = userRepository.save(new User("alice", "alice@example.com", "hash"));
+        Meeting existing = new Meeting(
+                "Planning",
+                "Sprint planning",
+                Instant.parse("2026-06-11T10:00:00Z"),
+                Instant.parse("2026-06-11T11:00:00Z"),
+                alice
+        );
+        existing.addParticipant(new MeetingParticipant(existing, alice, InviteStatus.ACCEPTED));
+        meetingRepository.save(existing);
+
+        mockMvc.perform(post("/meetings/new")
+                        .with(csrf())
+                        .param("title", "planning")
+                        .param("description", "Duplicate planning")
+                        .param("start", "2026-06-11T10:30")
+                        .param("end", "2026-06-11T11:30")
+                        .param("invitees", ""))
+                .andExpect(status().isOk())
+                .andExpect(result -> assertEquals("propose", result.getModelAndView().getViewName()))
+                .andExpect(model().attribute("error", "A meeting with this title already overlaps this time"));
+
+        assertEquals(1, meetingRepository.findAll().size());
+    }
 }
