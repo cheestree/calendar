@@ -36,6 +36,15 @@ public class MeetingService {
     @Transactional
     public Meeting propose(User organizer, String title, String description,
                            Instant start, Instant end, List<String> inviteeUsernames) {
+        if (title == null || title.isBlank()) {
+            throw new IllegalArgumentException("Title is required");
+        }
+        if (start == null) {
+            throw new IllegalArgumentException("Start time is required");
+        }
+        if (end == null) {
+            throw new IllegalArgumentException("End time is required");
+        }
         if (!end.isAfter(start)) {
             throw new IllegalArgumentException("End time must be after start time");
         }
@@ -47,7 +56,8 @@ public class MeetingService {
 
         Set<String> seen = new HashSet<>();
         seen.add(organizer.getUsername());
-        for (String username : inviteeUsernames) {
+        List<String> safeInviteeUsernames = inviteeUsernames == null ? List.of() : inviteeUsernames;
+        for (String username : safeInviteeUsernames) {
             String normalized = username == null ? "" : username.trim();
             if (normalized.isEmpty() || !seen.add(normalized)) continue;
             User invitee = userRepository.findByUsername(normalized)
@@ -85,6 +95,9 @@ public class MeetingService {
     @Transactional
     public Meeting copyFromDiscovered(User user, DiscoveredEvent event) {
         Instant end = event.end() != null ? event.end() : event.start().plus(Duration.ofHours(2));
+        if (!end.isAfter(event.start())) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
         String description = buildDescription(event);
         Meeting meeting = new Meeting(event.title(), description, event.start(), end, user);
         meeting.addParticipant(new MeetingParticipant(meeting, user, InviteStatus.ACCEPTED));
