@@ -18,9 +18,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MeetingFlowE2ETest extends E2ETestSupport {
 
-
     @Autowired
     private MeetingService meetingService;
+
+    private static final Instant START = Instant.parse("2026-07-01T10:00:00Z");
+    private static final Instant END = Instant.parse("2026-07-01T11:00:00Z");
+    private static final String START_INPUT = "2026-07-01T10:00";
+    private static final String END_INPUT = "2026-07-01T11:00";
 
     /**
      * Scenario: Alice proposes a meeting to Bob. Alice signs in, proposes a meeting, fills in the form, and submits it.
@@ -34,8 +38,8 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
         browser.findElement(By.id("description")).sendKeys("Sprint planning");
-        setDateTime("start", "2026-07-01T10:00");
-        setDateTime("end", "2026-07-01T11:00");
+        setDateTime("start", START_INPUT);
+        setDateTime("end", END_INPUT);
         browser.findElement(By.id("invitees")).sendKeys("bob");
         browser.findElement(By.cssSelector("form[action='/meetings/new'] button[type='submit']")).click();
 
@@ -69,8 +73,8 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
         browser.findElement(By.id("description")).sendKeys("Sprint planning");
-        setDateTime("start", "2026-07-01T10:00");
-        setDateTime("end", "2026-07-01T11:00");
+        setDateTime("start", START_INPUT);
+        setDateTime("end", END_INPUT);
         browser.findElement(By.id("invitees")).sendKeys("missing-user");
         browser.findElement(By.cssSelector("form[action='/meetings/new'] button[type='submit']")).click();
 
@@ -93,8 +97,8 @@ class MeetingFlowE2ETest extends E2ETestSupport {
         assertEquals("Calendar", browser.getTitle());
         browser.findElement(By.linkText("Propose a meeting")).click();
         browser.findElement(By.id("title")).sendKeys("Planning");
-        setDateTime("start", "2026-07-01T11:00");
-        setDateTime("end", "2026-07-01T10:00");
+        setDateTime("start", END_INPUT);
+        setDateTime("end", START_INPUT);
         browser.findElement(By.cssSelector("form[action='/meetings/new'] button[type='submit']")).click();
 
         assertEquals("Propose a meeting", browser.getTitle());
@@ -113,8 +117,8 @@ class MeetingFlowE2ETest extends E2ETestSupport {
                 alice,
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-07-01T10:00:00Z"),
-                Instant.parse("2026-07-01T11:00:00Z"),
+                START,
+                END,
                 List.of("bob"));
 
         signIn("bob", PASSWORD);
@@ -148,8 +152,8 @@ class MeetingFlowE2ETest extends E2ETestSupport {
                 alice,
                 "Planning",
                 "Sprint planning",
-                Instant.parse("2026-07-01T10:00:00Z"),
-                Instant.parse("2026-07-01T11:00:00Z"),
+                START,
+                END,
                 List.of("bob"));
 
         signIn("bob", PASSWORD);
