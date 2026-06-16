@@ -4,6 +4,7 @@ import com.example.meetings.model.InviteStatus;
 import com.example.meetings.model.User;
 import com.example.meetings.service.MeetingService;
 import com.example.meetings.service.UserService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -68,9 +70,14 @@ public class MeetingController {
                           @PathVariable Long id,
                           @RequestParam String action) {
         User user = userService.requireByUsername(principal.getUsername());
-        InviteStatus status = "accept".equalsIgnoreCase(action)
-                ? InviteStatus.ACCEPTED
-                : InviteStatus.DECLINED;
+        InviteStatus status;
+        if ("accept".equalsIgnoreCase(action)) {
+            status = InviteStatus.ACCEPTED;
+        } else if ("decline".equalsIgnoreCase(action)) {
+            status = InviteStatus.DECLINED;
+        } else {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown response action");
+        }
         meetingService.respond(id, user, status);
         return "redirect:/calendar";
     }
