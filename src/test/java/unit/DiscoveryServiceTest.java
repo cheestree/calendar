@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 
@@ -29,6 +30,8 @@ class DiscoveryServiceTest {
     private EventProvider seatGeek;
 
     private DiscoveryService discoveryService;
+
+    private static final Instant START_TIME = Instant.parse("2026-06-11T20:00:00Z");
 
     @BeforeEach
     void setUp() {
@@ -69,7 +72,7 @@ class DiscoveryServiceTest {
                 "tm-1",
                 "Concert",
                 "",
-                Instant.parse("2026-06-11T20:00:00Z"),
+                START_TIME,
                 null,
                 "https://example.com/concert",
                 ""
@@ -96,7 +99,7 @@ class DiscoveryServiceTest {
                 "tm-1",
                 "Later",
                 "",
-                Instant.parse("2026-06-12T20:00:00Z"),
+                START_TIME.plus(Duration.ofDays(1)),
                 null,
                 "https://example.com/later",
                 ""
@@ -106,7 +109,7 @@ class DiscoveryServiceTest {
                 "sg-duplicate",
                 "Duplicate later",
                 "",
-                Instant.parse("2026-06-10T20:00:00Z"),
+                START_TIME.minus(Duration.ofDays(1)),
                 null,
                 "https://example.com/later",
                 ""
@@ -116,7 +119,7 @@ class DiscoveryServiceTest {
                 "sg-1",
                 "Earlier",
                 "",
-                Instant.parse("2026-06-11T20:00:00Z"),
+                START_TIME,
                 null,
                 "https://example.com/earlier",
                 ""
@@ -142,7 +145,7 @@ class DiscoveryServiceTest {
                 "shared-id",
                 "First",
                 "",
-                Instant.parse("2026-06-11T20:00:00Z"),
+                START_TIME,
                 null,
                 null,
                 ""
@@ -152,7 +155,7 @@ class DiscoveryServiceTest {
                 "shared-id",
                 "Duplicate",
                 "",
-                Instant.parse("2026-06-12T20:00:00Z"),
+                START_TIME.plus(Duration.ofDays(1)),
                 null,
                 null,
                 ""
@@ -162,7 +165,7 @@ class DiscoveryServiceTest {
                 "shared-id",
                 "Same id different source",
                 "",
-                Instant.parse("2026-06-13T20:00:00Z"),
+                START_TIME.plus(Duration.ofDays(2)),
                 null,
                 null,
                 ""
